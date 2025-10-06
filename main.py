@@ -5,10 +5,20 @@ import asyncio
 from datetime import date, timedelta, datetime
 
 
-def get_currency_rates(json_from_url):
+def get_all_currencies(rates):
+    all_currencies = [r.get('currency') for r in rates]
+    return all_currencies
+
+
+def get_currency_rates(json_from_url, all_currencies):
     """Фільтруємо потрібні валюти"""
     rates = json_from_url.get("exchangeRate")
-    filtered = [r for r in rates if r.get("currency") in ("USD", "EUR")]
+    used_currency = ["USD", "EUR"]
+    if len(sys.argv) > 2:
+        used_currency.extend(get_currency_from_sys(all_currencies))
+
+
+    filtered = [r for r in rates if r.get("currency") in used_currency]
     return filtered
 
 
@@ -42,10 +52,24 @@ def get_dats_from_sys():
     except ValueError:
         sys.exit(1)
 
-async def process_day(session, str_date):
+def get_currency_from_sys(all_currencies):
+    added_currencies = []
+    try:
+        for i in range(len(sys.argv[2:])):
+            currency = sys.argv[i + 2]
+            if currency not in all_currencies:
+                print(f"Error {currency}")
+                sys.exit(1)
+            else:
+                added_currencies.append(currency)
+        return added_currencies
+    except ValueError:
+        sys.exit(1)
+
+async def process_day(session, str_date, all_currencies):
     """Отримуємо дані для однієї дати"""
     json_from_url = await get_normal_url(session, str_date)
-    currency_rates = get_currency_rates(json_from_url)
+    currency_rates = get_currency_rates(json_from_url, all_currencies)
     return {
         str_date: {
             rate["currency"]: {
@@ -63,10 +87,15 @@ async def main():
     main_list = []
 
     async with aiohttp.ClientSession() as session:
+        first_date = today_date - timedelta(days=1)
+        str_date = datetime.strftime(first_date, "%d.%m.%Y")
+        first_json = await get_normal_url(session, str_date)
+        all_currencies = get_all_currencies(first_json.get("exchangeRate", []))
+
         for day in range(count_of_days):
-            current_date = today_date - timedelta(days=day)
+            current_date = today_date - timedelta(days=day + 1)
             str_date = datetime.strftime(current_date, "%d.%m.%Y")
-            day_data = await process_day(session, str_date)
+            day_data = await process_day(session, str_date, all_currencies)
             main_list.append(day_data)
     return main_list
 
