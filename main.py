@@ -5,9 +5,9 @@ import asyncio
 from datetime import date, timedelta, datetime
 
 
-def get_currency_rates(result):
+def get_currency_rates(json_from_url):
     """Фільтруємо потрібні валюти"""
-    rates = result.get("exchangeRate")
+    rates = json_from_url.get("exchangeRate")
     filtered = [r for r in rates if r.get("currency") in ("USD", "EUR")]
     return filtered
 
@@ -44,8 +44,8 @@ def get_dats_from_sys():
 
 async def process_day(session, str_date):
     """Отримуємо дані для однієї дати"""
-    result = await get_normal_url(session, str_date)
-    currency_rates = get_currency_rates(result)
+    json_from_url = await get_normal_url(session, str_date)
+    currency_rates = get_currency_rates(json_from_url)
     return {
         str_date: {
             rate["currency"]: {
