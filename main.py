@@ -6,7 +6,8 @@ from datetime import date, timedelta, datetime
 
 
 def get_all_currencies(rates):
-    all_currencies = [r.get('currency') for r in rates]
+    """ Отримуємо усі ідентифікатори валют"""
+    all_currencies = [rate.get('currency') for rate in rates]
     return all_currencies
 
 
@@ -18,13 +19,13 @@ def get_currency_rates(json_from_url, all_currencies):
         used_currency.extend(get_currency_from_sys(all_currencies))
 
 
-    filtered = [r for r in rates if r.get("currency") in used_currency]
+    filtered = [rate for rate in rates if r.get("currency") in used_currency]
     return filtered
 
 
-async def get_normal_url(session, date):
+async def get_normal_url(session, str_date):
     """Отримуємо дані з API"""
-    url = f'https://api.privatbank.ua/p24api/exchange_rates?json&date={date}'
+    url = f'https://api.privatbank.ua/p24api/exchange_rates?json&date={str_date}'
 
     try:
         async with session.get(url) as response:
@@ -39,6 +40,7 @@ async def get_normal_url(session, date):
 
 
 def get_dats_from_sys():
+    """Отримуємо кількість днів з аргументів командного рядка"""
     if len(sys.argv) < 2:
         sys.exit(1)
 
@@ -53,6 +55,7 @@ def get_dats_from_sys():
         sys.exit(1)
 
 def get_currency_from_sys(all_currencies):
+    """Отримуємо додаткові валюти з аргументів командного рядка"""
     added_currencies = []
     try:
         for i in range(len(sys.argv[2:])):
